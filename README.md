@@ -1,3 +1,12 @@
+---
+title: Meta OpenEnv Hackathon
+emoji: 🚀
+colorFrom: blue
+colorTo: indigo
+sdk: docker
+pinned: false
+---
+
 # Autonomous Experiment Rescue Lab
 
 A seeded, partially observable benchmark where an AI agent diagnoses a hidden fault in a failing experiment, chooses the right interventions, and recovers the run under time and budget constraints.
