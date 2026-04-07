@@ -25,14 +25,15 @@ class ExperimentRescueClient:
     def __init__(self, base_url: str, timeout: float = 30.0) -> None:
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
+        self._session = requests.Session()
 
     def health(self) -> dict:
-        response = requests.get(f"{self.base_url}/health", timeout=self.timeout)
+        response = self._session.get(f"{self.base_url}/health", timeout=self.timeout)
         response.raise_for_status()
         return response.json()
 
     def metadata(self) -> dict:
-        response = requests.get(f"{self.base_url}/metadata", timeout=self.timeout)
+        response = self._session.get(f"{self.base_url}/metadata", timeout=self.timeout)
         response.raise_for_status()
         return response.json()
 
@@ -50,7 +51,7 @@ class ExperimentRescueClient:
         # Remove nulls so the API receives a compact request.
         payload = {k: v for k, v in payload.items() if v is not None}
 
-        response = requests.post(
+        response = self._session.post(
             f"{self.base_url}/reset",
             json=payload,
             timeout=self.timeout,
@@ -64,7 +65,7 @@ class ExperimentRescueClient:
 
     def step(self, action: Action) -> StepResult:
         payload = {"action": action.model_dump()}
-        response = requests.post(
+        response = self._session.post(
             f"{self.base_url}/step",
             json=payload,
             timeout=self.timeout,
@@ -74,7 +75,7 @@ class ExperimentRescueClient:
         return StepResult.model_validate(data["result"])
 
     def state(self) -> StateSnapshot:
-        response = requests.get(f"{self.base_url}/state", timeout=self.timeout)
+        response = self._session.get(f"{self.base_url}/state", timeout=self.timeout)
         response.raise_for_status()
         return StateSnapshot.model_validate(response.json())
 
