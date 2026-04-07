@@ -1,0 +1,44 @@
+name: autonomous-experiment-rescue-lab
+version: 0.1.0
+description: >
+  A seeded, partially observable benchmark where an agent diagnoses a hidden
+  fault and rescues a failing experiment under uncertainty.
+
+entrypoint:
+  module: envs.experiment_rescue_lab.server.app
+  app: app
+
+server:
+  host: 0.0.0.0
+  port: 7860
+  health_endpoint: /health
+  reset_endpoint: /reset
+  step_endpoint: /step
+  state_endpoint: /state
+
+client:
+  module: envs.experiment_rescue_lab.client
+  class_name: ExperimentRescueClient
+
+tasks:
+  - task_id: task_1
+    name: fault_identification
+    difficulty_levels: [easy, medium, hard]
+  - task_id: task_2
+    name: single_intervention_recovery
+    difficulty_levels: [easy, medium, hard]
+  - task_id: task_3
+    name: full_rescue_under_constraints
+    difficulty_levels: [easy, medium, hard]
+
+limits:
+  max_steps: 12
+  initial_budget: 6
+  runtime_seconds: 1200
+  cpu_cores: 2
+  memory_gb: 8
+
+validation:
+  require_deterministic_seed: true
+  require_grader_scores_in_unit_interval: true
+  require_docker_build: true
