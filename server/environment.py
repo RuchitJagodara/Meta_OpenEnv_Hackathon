@@ -20,6 +20,7 @@ from server.scenarios import (
     build_hidden_state,
     build_scenario_spec,
 )
+from server.grader import make_grader_context, score_task_1, score_task_2, score_task_3
 
 
 @dataclass
@@ -105,6 +106,24 @@ class ExperimentRescueEnvironment:
         done = self._check_terminal_conditions()
         if done:
             reward += self._terminal_reward()
+            
+            ctx = make_grader_context(
+                episode_seed=0,  # Seed purely cosmetic in ctx for the current deterministic score methods
+                task_id=self.task_id,
+                difficulty=self.difficulty,
+                hidden_fault=self.hidden.fault_type,
+                hidden_faults=[self.hidden.fault_type],
+                final_hidden_state=self.hidden,
+            )
+            # Grader expects Sequence[Action], simulate it from the ActionType history
+            action_trace = [Action(type=t, args={}) for t in self.hidden.action_history]
+            
+            if self.task_id == "task_1":
+                info["score"] = score_task_1(ctx, action_trace).total_score
+            elif self.task_id == "task_2":
+                info["score"] = score_task_2(ctx, action_trace).total_score
+            else:
+                info["score"] = score_task_3(ctx, action_trace).total_score
 
         reward = self._normalize_reward(reward)
         info["terminal_status"] = self.hidden.terminal_status.value
