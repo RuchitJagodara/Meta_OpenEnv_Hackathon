@@ -39,7 +39,11 @@ SYSTEM_PROMPT = textwrap.dedent(
     The environment exposes noisy sensor readings, trend features, and logs.
     Your job is to diagnose faults and recover the experiment safely.
 
-    If asked to propose an action, respond with exactly one token from:
+    CRITICAL INSTRUCTION: You must think step-by-step before acting. 
+    Wrap your internal reasoning inside <thinking>...</thinking> tags.
+    After thinking, you must provide EXACTLY ONE discrete action inside <action>...</action> tags.
+
+    Available action tokens:
     inspect
     run_diagnostic_probe
     calibrate_sensor
@@ -50,8 +54,6 @@ SYSTEM_PROMPT = textwrap.dedent(
     continue_process
     discard_sample
     restart_substage
-
-    Return only one token.
     """
 ).strip()
 
@@ -107,6 +109,17 @@ def heuristic_policy(observation: Observation, last_action: Optional[ActionType]
     slope = observation.rolling_slope
     volatility = observation.volatility
     logs = set(observation.log_events)
+    
+    # NEW HEURISTIC LOGIC: Handle severely degraded sensors by abandoning granular sensor reliance
+    if observation.sensors_degraded or "CRITICAL: sensor_telemetry_unreliable" in logs:
+        # Without reliable sensors, we rely primarily on safe mode and diagnostic probes
+        if "safe_mode_active" not in logs:
+            return ActionType.ENABLE_SAFE_MODE
+        if last_action != ActionType.RUN_DIAGNOSTIC_PROBE and uncertainty > 0.50:
+            return ActionType.RUN_DIAGNOSTIC_PROBE
+        if "possible_contamination" in logs:
+            return ActionType.DISCARD_SAMPLE
+        return ActionType.INSPECT
 
     if "possible_contamination" in logs:
         return ActionType.DISCARD_SAMPLE
@@ -180,9 +193,11 @@ def llm_policy_action(
         History:
         {chr(10).join(history[-4:]) if history else "None"}
 
-        Return exactly one action token.
+        Return your final choice enclosed exactly in <action>...</action> tags.
         """
     ).strip()
+
+    import re
 
     try:
         completion = client.chat.completions.create(
@@ -192,11 +207,17 @@ def llm_policy_action(
                 {"role": "user", "content": user_prompt},
             ],
             temperature=0.0,
-            max_tokens=16,
             stream=False,
         )
         text = (completion.choices[0].message.content or "").strip().lower()
-        token = text.split()[0] if text else ""
+        
+        # Look for <action> tags with regex
+        match = re.search(r"<action>\s*(.*?)\s*</action>", text)
+        if match:
+            token = match.group(1).strip()
+        else:
+            # Fallback if the LLM ignores instructions
+            token = text.split()[-1] if text else ""
     except Exception:
         token = ""
 

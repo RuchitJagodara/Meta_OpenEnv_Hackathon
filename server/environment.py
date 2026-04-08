@@ -199,6 +199,7 @@ class ExperimentRescueEnvironment:
             anomaly_score=anomaly_score,
             diagnosis_uncertainty=diagnosis_uncertainty,
             log_events=log_events,
+            sensors_degraded=self.hidden.sensors_degraded,
             steps_remaining=max(0, self.hidden.max_steps - self.hidden.step_count),
             budget_remaining=self.hidden.budget_remaining,
             available_actions=available_actions,
@@ -262,6 +263,11 @@ class ExperimentRescueEnvironment:
             sensor_b += 0.05
             sensor_c += 0.03
             sensor_a -= 0.02
+            
+        if self.hidden.sensors_degraded:
+            noise_a *= 3.5
+            noise_b *= 3.5
+            noise_c *= 3.5
 
         sensor_a += rng.uniform(-noise_a, noise_a)
         sensor_b += rng.uniform(-noise_b, noise_b)
@@ -364,8 +370,17 @@ class ExperimentRescueEnvironment:
             events.append("possible_contamination")
         if self.hidden.fault_severity > 0.65:
             events.append("process_degrading")
+            
+        if self.hidden.sensors_degraded:
+            events.append("CRITICAL: sensor_telemetry_unreliable")
+            
         if not events:
             events.append("within_normal_bounds")
+            
+        # Introduce a "delays" mechanic where degraded sensors occasionally drop log events
+        if self.hidden.sensors_degraded and (self.hidden.step_count % 3 == 0):
+            events = ["telemetry_timeout"]
+            
         return events[:4]
 
     def _available_actions(self) -> List[ActionType]:
@@ -633,6 +648,17 @@ class ExperimentRescueEnvironment:
 
         if action.type == ActionType.PAUSE_PROCESS:
             self.hidden.stability_margin = min(1.0, self.hidden.stability_margin + 0.03)
+            
+        # NEW MECHANIC: Sensor Degradation due to high contamination
+        if self.hidden.contamination_level > 0.60 and not self.hidden.sensors_degraded:
+            self.hidden.sensors_degraded = True
+            
+        # NEW MECHANIC: Cascading Failures
+        if self.hidden.stability_margin < 0.20 and not self.hidden.safe_mode_enabled:
+            if self.hidden.fault_type != FaultType.MULTI_FAULT:
+                self.hidden.fault_type = FaultType.MULTI_FAULT
+                self.hidden.fault_severity = min(1.0, self.hidden.fault_severity + 0.15)
+                self.hidden.latent_quality -= 0.10
 
         if self.hidden.step_count == 1:
             self.hidden.current_stage = Stage.MONITORING

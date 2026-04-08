@@ -144,11 +144,25 @@ def shaped_reward(
 
     reward += max(-0.10, min(0.20, 0.50 * quality_delta))
     reward += max(-0.08, min(0.18, 0.45 * stability_delta))
+    
+    # NEW MECHANIC: Non-linear penalties for severity bounds
+    if hidden.fault_severity > 0.70:
+        reward -= 0.15 * (hidden.fault_severity ** 2)
     reward -= max(0.0, 0.35 * severity_delta)
+    
+    # Non-linear penalty for extreme contamination
+    if hidden.contamination_level > 0.65:
+        reward -= 0.10 * (hidden.contamination_level ** 1.5)
     reward -= max(0.0, 0.25 * contamination_delta)
 
     if action == best_action_for_fault(hidden.fault_type):
         reward += 0.10
+        
+    # NEW MECHANIC: Discovery Bonus
+    if action == ActionType.RUN_DIAGNOSTIC_PROBE and hidden.probes_used == 0:
+        if hidden.inferred_fault == hidden.fault_type and hidden.inferred_confidence > 0.70:
+            reward += 0.35
+            hidden.probes_used += 1
 
     if hidden.safe_mode_enabled:
         reward += 0.01

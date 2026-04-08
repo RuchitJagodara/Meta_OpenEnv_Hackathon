@@ -52,35 +52,43 @@ class ActionType(str, Enum):
 
 
 class Action(BaseModel):
-    """A single environment action.
+    """A single programmatic environment action.
 
-    The environment keeps the action space intentionally small so that the
-    benchmark remains easy to validate, easy to grade, and meaningful to learn.
+    Action definitions intentionally mimic discrete operations in real-world
+    experiment pipelines (triage, inspection, parameter tuning, sensor calibration).
     """
 
-    type: ActionType
-    args: Dict[str, float] = Field(default_factory=dict)
+    type: ActionType = Field(description="The primary discrete categoric action type to execute.")
+    args: Dict[str, float] = Field(
+        default_factory=dict, 
+        description="Optional continuous arguments to pass alongside the discrete action (e.g., target ranges)."
+    )
 
 
 class Observation(BaseModel):
-    """What the agent can observe at each step."""
+    """The rich, dynamic state vector the agent observes at each discrete step.
+    
+    Contains multimodal signals including raw sensor floats, calculated trend heuristics,
+    and unstructured log diagnostics to heavily test LLM synthesis capabilities.
+    """
 
-    task_id: str
-    stage: Stage
-    sensor_a: float
-    sensor_b: float
-    sensor_c: float
-    rolling_mean: float
-    rolling_slope: float
-    volatility: float
-    anomaly_score: float
-    diagnosis_uncertainty: float
-    log_events: List[str] = Field(default_factory=list)
-    steps_remaining: int
-    budget_remaining: int
-    available_actions: List[ActionType] = Field(default_factory=list)
-    previous_action: Optional[ActionType] = None
-    last_reward: float = 0.0
+    task_id: str = Field(description="The active hackathon task constraint identifier.")
+    stage: Stage = Field(description="The current operational stage of the experiment lifecycle.")
+    sensor_a: float = Field(description="Noisy primary scalar metric (e.g., temperature/offset).")
+    sensor_b: float = Field(description="Noisy secondary scalar metric (e.g., pressure/gain).")
+    sensor_c: float = Field(description="Noisy tertiary scalar metric (e.g., density/latency).")
+    rolling_mean: float = Field(description="Aggregated 3-step trailing average of sensor stability.")
+    rolling_slope: float = Field(description="Calculated velocity (first derivative) of recent sensor deviations.")
+    volatility: float = Field(description="Empirical variance calculation showing system turbulence.")
+    anomaly_score: float = Field(description="An estimated AI-driven heuristic indicating presence of a latent fault.")
+    diagnosis_uncertainty: float = Field(description="Confidence entropy associated with the anomaly classifier.")
+    log_events: List[str] = Field(default_factory=list, description="Text-based discrete event logs acting as auxiliary signals.")
+    sensors_degraded: bool = Field(default=False, description="True if severe fault cascades have permanently impaired sensor reliability.")
+    steps_remaining: int = Field(description="Number of discrete steps remaining before forced truncation.")
+    budget_remaining: int = Field(description="Operational credit limit. Actions consume budget.")
+    available_actions: List[ActionType] = Field(default_factory=list, description="Currently permitted actions in this state.")
+    previous_action: Optional[ActionType] = Field(default=None, description="The action taken in the immediately preceding transition.")
+    last_reward: float = Field(default=0.0, description="The reward delta returned from the previous transition.")
 
 
 class HiddenState(BaseModel):
@@ -94,12 +102,13 @@ class HiddenState(BaseModel):
     seed: int
     experiment_type: ExperimentType
     fault_type: FaultType
-    fault_severity: float = Field(ge=0.0, le=1.0)
-    latent_quality: float = Field(ge=0.0, le=1.0)
+    fault_severity: float = Field(ge=0.0, le=1.0, description="Hidden magnitude scalar of the active catastrophic fault.")
+    latent_quality: float = Field(ge=0.0, le=1.0, description="The true unobserved sample quality score driving the primary reward.")
     true_target_params: Dict[str, float] = Field(default_factory=dict)
     noise_profile: Dict[str, float] = Field(default_factory=dict)
-    contamination_level: float = Field(ge=0.0, le=1.0)
-    stability_margin: float = Field(ge=0.0, le=1.0)
+    contamination_level: float = Field(ge=0.0, le=1.0, description="Accumulated system contamination that worsens exponentially if unchecked.")
+    stability_margin: float = Field(ge=0.0, le=1.0, description="System resilience buffer. If it reaches zero, a cascading failure occurs.")
+    sensors_degraded: bool = Field(default=False, description="Whether cascading failures have permanently worsened noise profiles.")
     step_count: int = 0
     max_steps: int = 12
     budget_remaining: int = 6
@@ -111,6 +120,7 @@ class HiddenState(BaseModel):
     current_stage: Stage = Stage.INITIALIZATION
     action_history: List[ActionType] = Field(default_factory=list)
     diagnostic_history: List[str] = Field(default_factory=list)
+    probes_used: int = Field(default=0, description="Tracks unique diagnostic milestones uncovered by the agent.")
 
     def diagnosis_history_complexity(self) -> float:
         """Return a small proxy for how diagnostically complex the episode is."""
