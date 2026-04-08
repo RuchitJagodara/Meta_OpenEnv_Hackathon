@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from envs.experiment_rescue_lab.models import Action, ActionType, FaultType
-from envs.experiment_rescue_lab.server.environment import make_environment
-from envs.experiment_rescue_lab.server.grader import make_grader_context, score_task_1, score_task_2, score_task_3
+from models import Action, ActionType, FaultType
+from server.environment import make_environment
+from server.grader import make_grader_context, score_task_1, score_task_2, score_task_3
 
 
 def _run_episode(task_id: str, difficulty: str, seed: int):

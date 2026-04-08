@@ -4,7 +4,7 @@ import random
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple
 
-from envs.experiment_rescue_lab.models import (
+from models import (
     Action,
     ActionType,
     FaultType,
@@ -16,7 +16,7 @@ from envs.experiment_rescue_lab.models import (
     StepResult,
     TerminalStatus,
 )
-from envs.experiment_rescue_lab.server.scenarios import (
+from server.scenarios import (
     build_hidden_state,
     build_scenario_spec,
 )

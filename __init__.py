@@ -1,4 +1,4 @@
-from envs.experiment_rescue_lab.models import (
+from models import (
     Action,
     ActionType,
     EnvironmentMetadata,
@@ -13,7 +13,7 @@ from envs.experiment_rescue_lab.models import (
     StepResult,
     TerminalStatus,
 )
-from envs.experiment_rescue_lab.client import ExperimentRescueClient, make_client
+from client import ExperimentRescueClient, make_client
 
 __all__ = [
     "Action",

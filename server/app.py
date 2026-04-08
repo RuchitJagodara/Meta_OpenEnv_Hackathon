@@ -3,15 +3,16 @@ from __future__ import annotations
 from typing import Optional
 
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, Field
 
-from envs.experiment_rescue_lab.models import (
+from models import (
     Action,
     Observation,
     StateSnapshot,
     StepResult,
 )
-from envs.experiment_rescue_lab.server.environment import (
+from server.environment import (
     ExperimentRescueEnvironment,
     make_environment,
 )
@@ -103,9 +104,58 @@ def get_state() -> StateSnapshot:
 def root() -> dict:
     return {
         "message": "Autonomous Experiment Rescue Lab is running.",
-        "routes": ["/health", "/metadata", "/reset", "/step", "/state"],
+        "routes": ["/health", "/metadata", "/reset", "/step", "/state", "/web"],
     }
 
 
+_WEB_HTML = """<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Autonomous Experiment Rescue Lab</title>
+  <style>
+    body {{ font-family: system-ui, sans-serif; max-width: 720px; margin: 60px auto; padding: 0 20px; color: #222; }}
+    h1 {{ font-size: 1.6rem; margin-bottom: 0.25rem; }}
+    p  {{ color: #555; margin-top: 0.25rem; }}
+    ul {{ line-height: 2; }}
+    code {{ background: #f3f3f3; padding: 2px 6px; border-radius: 4px; }}
+    .badge {{ display: inline-block; background: #22c55e; color: #fff; border-radius: 99px; padding: 2px 12px; font-size: .8rem; margin-left: 8px; vertical-align: middle; }}
+  </style>
+</head>
+<body>
+  <h1>Autonomous Experiment Rescue Lab <span class="badge">online</span></h1>
+  <p>A seeded, partially observable benchmark where an AI agent diagnoses a hidden fault and rescues a failing experiment.</p>
+  <h2>API Endpoints</h2>
+  <ul>
+    <li><code>GET  /health</code> — Liveness probe</li>
+    <li><code>GET  /metadata</code> — Environment metadata</li>
+    <li><code>POST /reset</code> — Start a new episode</li>
+    <li><code>POST /step</code> — Take one action</li>
+    <li><code>GET  /state</code> — Current episode state</li>
+    <li><code>GET  /docs</code> — Interactive OpenAPI docs</li>
+  </ul>
+  <h2>Quick start</h2>
+  <pre><code>curl -X POST {base_url}/reset \\
+  -H "Content-Type: application/json" \\
+  -d '{{"task_id":"task_3","difficulty":"medium","seed":42}}'</code></pre>
+</body>
+</html>"""
+
+
+@app.get("/web", response_class=HTMLResponse, include_in_schema=False)
+@app.get("/web/", response_class=HTMLResponse, include_in_schema=False)
+def web_interface(logs: Optional[str] = None) -> HTMLResponse:
+    """Serve a simple web status page (used by HuggingFace Spaces and openenv-core)."""
+    return HTMLResponse(content=_WEB_HTML.format(base_url=""), status_code=200)
+
+
 # Optional local development entrypoint:
-#   uvicorn envs.experiment_rescue_lab.server.app:app --host 0.0.0.0 --port 7860
+#   uvicorn server.app:app --host 0.0.0.0 --port 7860
+
+def main():
+    import uvicorn
+    uvicorn.run("server.app:app", host="0.0.0.0", port=7860)
+
+if __name__ == "__main__":
+    main()

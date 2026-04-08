@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Dict, Tuple
 
-from envs.experiment_rescue_lab.models import Action, ActionType, FaultType, HiddenState
+from models import Action, ActionType, FaultType, HiddenState
 
 
 def diagnosis_history_complexity(hidden: HiddenState) -> float:

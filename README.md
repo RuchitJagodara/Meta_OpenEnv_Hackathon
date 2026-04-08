@@ -169,25 +169,26 @@ autonomous-experiment-rescue-lab/
 ├── openenv.yaml
 ├── inference.py
 ├── Dockerfile
+├── pyproject.toml
+├── __init__.py
+├── models.py
+├── client.py
+├── experiment_rescue_lab_README.md
 ├── tests/
 │   ├── test_env_reset.py
 │   ├── test_env_step.py
-│   ├── test_grader_determinism.py
-│   └── test_inference_smoke.py
-└── envs/
-    └── experiment_rescue_lab/
-        ├── __init__.py
-        ├── models.py
-        ├── client.py
-        ├── README.md
-        └── server/
-            ├── __init__.py
-            ├── environment.py
-            ├── app.py
-            ├── scenarios.py
-            ├── reward.py
-            ├── grader.py
-            └── config.py
+│   ├── test_package_imports.py
+│   └── test_grader_determinism.py
+└── server/
+    ├── __init__.py
+    ├── environment.py
+    ├── app.py
+    ├── scenarios.py
+    ├── reward.py
+    ├── grader.py
+    ├── Dockerfile
+    ├── requirements.txt
+    └── config.py
 
 ```
 
@@ -202,7 +203,7 @@ pip install -r requirements.txt
 ### Run locally (server)
 
 ```bash
-uvicorn envs.experiment_rescue_lab.server.app:app --host 0.0.0.0 --port 7860
+uvicorn server.app:app --host 0.0.0.0 --port 7860
 ```
 
 Health check:

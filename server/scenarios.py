@@ -4,7 +4,7 @@ import hashlib
 import random
 from typing import Dict, List, Tuple
 
-from envs.experiment_rescue_lab.models import (
+from models import (
     ExperimentType,
     FaultType,
     HiddenState,

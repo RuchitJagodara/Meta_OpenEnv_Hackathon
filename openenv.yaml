@@ -5,7 +5,7 @@ description: >
   fault and rescues a failing experiment under uncertainty.
 
 entrypoint:
-  module: envs.experiment_rescue_lab.server.app
+  module: server.app
   app: app
 
 server:
@@ -17,7 +17,7 @@ server:
   state_endpoint: /state
 
 client:
-  module: envs.experiment_rescue_lab.client
+  module: client
   class_name: ExperimentRescueClient
 
 tasks:

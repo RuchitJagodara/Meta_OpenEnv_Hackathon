@@ -8,8 +8,8 @@ from typing import List, Optional
 
 from openai import OpenAI
 
-from envs.experiment_rescue_lab.client import ExperimentRescueClient
-from envs.experiment_rescue_lab.models import Action, ActionType, Observation, TerminalStatus
+from client import ExperimentRescueClient
+from models import Action, ActionType, Observation, TerminalStatus
 
 
 # -----------------------------------------------------------------------------

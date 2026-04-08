@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from envs.experiment_rescue_lab.models import Action, ActionType, Stage, TerminalStatus
-from envs.experiment_rescue_lab.server.environment import make_environment
+from models import Action, ActionType, Stage, TerminalStatus
+from server.environment import make_environment
 
 
 def test_step_advances_environment_state():

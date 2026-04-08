@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from envs.experiment_rescue_lab.server.environment import make_environment
-from envs.experiment_rescue_lab.models import Stage, TerminalStatus
+from server.environment import make_environment
+from models import Stage, TerminalStatus
 
 
 def test_reset_returns_valid_observation():

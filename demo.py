@@ -3,8 +3,8 @@ from __future__ import annotations
 import os
 from typing import Optional
 
-from envs.experiment_rescue_lab.client import ExperimentRescueClient
-from envs.experiment_rescue_lab.models import Action, ActionType, Observation, StateSnapshot
+from client import ExperimentRescueClient
+from models import Action, ActionType, Observation, StateSnapshot
 
 
 ENV_BASE_URL = os.getenv("ENV_BASE_URL", "https://deleteduser-meta-openenv-hackathon.hf.space")

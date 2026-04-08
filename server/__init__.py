@@ -1,5 +1,5 @@
-from envs.experiment_rescue_lab.server.app import app
-from envs.experiment_rescue_lab.server.environment import (
+from server.app import app
+from server.environment import (
     ExperimentRescueEnvironment,
     make_environment,
 )

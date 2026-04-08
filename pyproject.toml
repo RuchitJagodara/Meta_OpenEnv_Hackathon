@@ -13,14 +13,16 @@ dependencies = [
   "uvicorn[standard]>=0.30.0,<1.0.0",
   "pydantic>=2.8.0,<3.0.0",
   "requests>=2.32.0,<3.0.0",
+  "openenv-core>=0.2.0",
 ]
+
+[project.scripts]
+server = "server.app:main"
 
 [tool.setuptools]
 include-package-data = true
-
-[tool.setuptools.packages.find]
-where = ["."]
-include = ["envs*"]
+packages = ["server"]
+py-modules = ["client", "models"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

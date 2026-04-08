@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Sequence, Tuple
 
-from envs.experiment_rescue_lab.models import (
+from models import (
     Action,
     ActionType,
     FaultType,
@@ -11,7 +11,7 @@ from envs.experiment_rescue_lab.models import (
     HiddenState,
     TerminalStatus,
 )
-from envs.experiment_rescue_lab.server.reward import best_action_for_fault
+from server.reward import best_action_for_fault
 
 
 @dataclass(frozen=True)

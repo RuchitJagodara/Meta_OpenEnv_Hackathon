@@ -4,7 +4,7 @@ from typing import Optional
 
 import requests
 
-from envs.experiment_rescue_lab.models import (
+from models import (
     Action,
     Observation,
     StateSnapshot,
