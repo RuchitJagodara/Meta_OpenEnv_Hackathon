@@ -4,98 +4,148 @@ import os
 from typing import Optional
 
 from envs.experiment_rescue_lab.client import ExperimentRescueClient
-from envs.experiment_rescue_lab.models import Action, ActionType, Observation
+from envs.experiment_rescue_lab.models import Action, ActionType, Observation, StateSnapshot
 
 
-ENV_BASE_URL = os.getenv("ENV_BASE_URL", "http://127.0.0.1:7860")
-TASK_NAME = os.getenv("TASK_NAME", "task_3")
-DIFFICULTY = os.getenv("DIFFICULTY", "medium")
-SEED = int(os.getenv("SEED", "42"))
+ENV_BASE_URL = os.getenv("ENV_BASE_URL", "https://deleteduser-meta-openenv-hackathon.hf.space")
+TASK_NAME = os.getenv("TASK_NAME", "task_1")
+DIFFICULTY = os.getenv("DIFFICULTY", "easy")
+SEED = int(os.getenv("SEED", "52"))
 MAX_STEPS = int(os.getenv("MAX_STEPS", "12"))
-
-
-def heuristic_policy(observation: Observation, last_action: Optional[ActionType]) -> ActionType:
-    sensor_a = observation.sensor_a
-    sensor_b = observation.sensor_b
-    sensor_c = observation.sensor_c
-    anomaly = observation.anomaly_score
-    uncertainty = observation.diagnosis_uncertainty
-    slope = observation.rolling_slope
-    volatility = observation.volatility
-    logs = set(observation.log_events)
-
-    if "possible_contamination" in logs:
-        return ActionType.DISCARD_SAMPLE
-    if "safe_mode_active" not in logs and (sensor_b < 0.45 or volatility > 0.55):
-        return ActionType.ENABLE_SAFE_MODE
-    if anomaly > 0.70 and uncertainty > 0.50:
-        return ActionType.RUN_DIAGNOSTIC_PROBE
-    if uncertainty > 0.65:
-        return ActionType.INSPECT
-    if sensor_a < 0.40 and slope > 0.20:
-        return ActionType.ADJUST_PARAM_A
-    if sensor_b < 0.40 and volatility > 0.35:
-        return ActionType.ADJUST_PARAM_B
-    if sensor_c < 0.55 and anomaly > 0.45:
-        return ActionType.CALIBRATE_SENSOR
-    if slope > 0.25 and sensor_a < 0.55:
-        return ActionType.ADJUST_PARAM_A
-    if sensor_b < 0.55 and sensor_c < 0.60:
-        return ActionType.PAUSE_PROCESS
-    if anomaly < 0.30 and uncertainty < 0.35:
-        return ActionType.CONTINUE_PROCESS
-    if last_action == ActionType.RUN_DIAGNOSTIC_PROBE:
-        return ActionType.CALIBRATE_SENSOR
-    if last_action == ActionType.CALIBRATE_SENSOR:
-        return ActionType.ADJUST_PARAM_A
-    return ActionType.INSPECT
 
 
 def format_action(action: Action) -> str:
     if action.args:
-        args_str = ",".join(f"{k}={v}" for k, v in action.args.items())
-        return f"{action.type.value}({args_str})"
+        args = ", ".join(f"{k}={v}" for k, v in action.args.items())
+        return f"{action.type.value}({args})"
     return action.type.value
+
+
+def heuristic_policy(observation: Observation, last_action: Optional[ActionType]) -> ActionType:
+    """Small deterministic policy for the demo.
+
+    This is intentionally simple and readable. It is not the evaluation policy.
+    """
+    logs = set(observation.log_events)
+
+    if "possible_contamination" in logs:
+        return ActionType.DISCARD_SAMPLE
+
+    if observation.diagnosis_uncertainty > 0.65:
+        return ActionType.INSPECT
+
+    if observation.anomaly_score > 0.70:
+        return ActionType.RUN_DIAGNOSTIC_PROBE
+
+    if observation.volatility > 0.55:
+        return ActionType.ENABLE_SAFE_MODE
+
+    if observation.sensor_a < 0.40:
+        return ActionType.ADJUST_PARAM_A
+
+    if observation.sensor_b < 0.40:
+        return ActionType.ADJUST_PARAM_B
+
+    if observation.sensor_c < 0.55:
+        return ActionType.CALIBRATE_SENSOR
+
+    if last_action == ActionType.RUN_DIAGNOSTIC_PROBE:
+        return ActionType.CALIBRATE_SENSOR
+
+    return ActionType.CONTINUE_PROCESS
+
+
+def print_observation(prefix: str, obs: Observation) -> None:
+    print(prefix)
+    print(f"  task_id: {obs.task_id}")
+    print(f"  stage: {obs.stage.value}")
+    print(
+        f"  sensors: a={obs.sensor_a:.3f}, b={obs.sensor_b:.3f}, c={obs.sensor_c:.3f}"
+    )
+    print(
+        f"  trends: mean={obs.rolling_mean:.3f}, slope={obs.rolling_slope:.3f}, volatility={obs.volatility:.3f}"
+    )
+    print(
+        f"  anomaly_score={obs.anomaly_score:.3f}, diagnosis_uncertainty={obs.diagnosis_uncertainty:.3f}"
+    )
+    print(f"  logs: {', '.join(obs.log_events) if obs.log_events else 'none'}")
+    print(f"  steps_remaining: {obs.steps_remaining}")
+    print(f"  budget_remaining: {obs.budget_remaining}")
+    print(f"  available_actions: {[a.value for a in obs.available_actions]}")
+    if obs.previous_action is not None:
+        print(f"  previous_action: {obs.previous_action.value}")
+    print(f"  last_reward: {obs.last_reward:.2f}")
+
+
+def print_state(prefix: str, state: StateSnapshot) -> None:
+    print(prefix)
+    print(f"  episode_id: {state.episode_id}")
+    print(f"  task_id: {state.task_id}")
+    print(f"  step_count: {state.step_count}")
+    print(f"  budget_remaining: {state.budget_remaining}")
+    print(f"  stage: {state.stage.value}")
+    print(f"  terminal_status: {state.terminal_status.value}")
+    print(f"  visible_metrics: {state.visible_metrics}")
+    print(f"  action_history: {[a.value for a in state.action_history]}")
 
 
 def main() -> int:
     client = ExperimentRescueClient(base_url=ENV_BASE_URL)
+    last_action: Optional[ActionType] = None
+    total_reward = 0.0
+    total_steps = 0
 
     print("=== Autonomous Experiment Rescue Lab Demo ===")
-    print(f"Server: {ENV_BASE_URL}")
+    print(f"Server URL: {ENV_BASE_URL}")
     print(f"Task: {TASK_NAME}")
     print(f"Difficulty: {DIFFICULTY}")
     print(f"Seed: {SEED}")
+    print()
 
     try:
+        print("Connecting to environment...")
         print("Health:", client.health())
-        observation, state = client.reset(task_id=TASK_NAME, difficulty=DIFFICULTY, seed=SEED)
-        print("Initial state:", state.model_dump())
-        print("Initial observation:", observation.model_dump())
+        print()
 
-        total_reward = 0.0
-        last_action: Optional[ActionType] = None
+        print("Resetting episode...")
+        observation, state = client.reset(task_id=TASK_NAME, difficulty=DIFFICULTY, seed=SEED)
+        print_state("Initial state:", state)
+        print()
+        print_observation("Initial observation:", observation)
+        print()
 
         for step in range(1, MAX_STEPS + 1):
             action_type = heuristic_policy(observation, last_action)
             action = Action(type=action_type, args={})
-            result = client.step(action)
-            observation = result.observation
-            total_reward += float(result.reward or 0.0)
-            last_action = action_type
+            total_steps += 1
 
-            print(
-                f"Step {step}: action={format_action(action)} "
-                f"reward={result.reward:.2f} done={str(result.done).lower()}"
-            )
+            print(f"Step {step} chosen action: {format_action(action)}")
 
-            if result.done:
+            try:
+                result = client.step(action)
+                observation = result.observation
+                total_reward += float(result.reward or 0.0)
+                last_action = action_type
+
+                print(
+                    f"  reward={result.reward:.2f}, done={str(result.done).lower()}, error=null"
+                )
+                print_observation("  next observation:", observation)
+                print()
+
+                if result.done:
+                    break
+
+            except Exception as exc:
+                print(f"  reward=0.00, done=false, error={exc}")
+                print()
                 break
 
         final_state = client.state()
-        print("Final state:", final_state.model_dump())
-        print(f"Total normalized reward: {total_reward:.2f}")
-        print("Demo complete.")
+        print_state("Final state:", final_state)
+        print()
+        print(f"Average reward: {(total_reward/total_steps):.2f}")
+        print("Demo finished successfully.")
         return 0
 
     finally:

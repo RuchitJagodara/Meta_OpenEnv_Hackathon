@@ -22,12 +22,12 @@ HF_TOKEN_RAW = os.getenv("HF_TOKEN")
 HF_TOKEN = HF_TOKEN_RAW.strip() if HF_TOKEN_RAW is not None else None
 
 # Environment server URL for the OpenEnv HTTP endpoint.
-ENV_BASE_URL = os.getenv("ENV_BASE_URL", "http://127.0.0.1:7860")
+ENV_BASE_URL = os.getenv("ENV_BASE_URL", "https://deleteduser-meta-openenv-hackathon.hf.space")
 
 TASK_NAME = os.getenv("TASK_NAME", "task_3")
 BENCHMARK = os.getenv("BENCHMARK", "autonomous_experiment_rescue_lab")
-DIFFICULTY = os.getenv("DIFFICULTY", "medium")
-SEED = int(os.getenv("SEED", "42"))
+DIFFICULTY = os.getenv("DIFFICULTY", "hard")
+SEED = int(os.getenv("SEED", "52"))
 
 MAX_STEPS = 12
 USE_LLM_POLICY = os.getenv("USE_LLM_POLICY", "0") == "1"
