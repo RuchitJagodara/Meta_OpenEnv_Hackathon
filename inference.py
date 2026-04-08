@@ -250,6 +250,13 @@ async def run_episode(
                 reward = float(result.reward or 0.0)
                 done = bool(result.done)
                 error = None
+                
+                if done and result.info and "score" in result.info:
+                    try:
+                        score = float(result.info["score"])
+                    except (ValueError, TypeError):
+                        pass
+
             except Exception as exc:
                 obs = observation
                 reward = 0.0
@@ -274,9 +281,10 @@ async def run_episode(
             if error is not None or done:
                 break
 
-        # Rewards are normalized to [0, 1], so the mean is a valid score.
-        score = sum(rewards) / len(rewards) if rewards else 0.0
-        score = max(0.0, min(1.0, score))
+        if score == 0.0:
+            score = sum(rewards) / len(rewards) if rewards else 0.0
+        
+        score = max(0.001, min(0.999, score))
         success = score >= SUCCESS_SCORE_THRESHOLD
 
     finally:
