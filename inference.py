@@ -79,10 +79,10 @@ def log_step(step: int, action: str, reward: float, done: bool, error: Optional[
     )
 
 
-def log_end(success: bool, steps: int, rewards: List[float]) -> None:
+def log_end(success: bool, steps: int, rewards: List[float], score: float = 0.0) -> None:
     rewards_str = ",".join(f"{r:.2f}" for r in rewards)
     print(
-        f"[END] success={str(success).lower()} steps={steps} rewards={rewards_str}",
+        f"[END] success={str(success).lower()} steps={steps} rewards={rewards_str} score={score:.3f}",
         flush=True,
     )
 
@@ -288,7 +288,7 @@ async def run_episode(
         success = score >= SUCCESS_SCORE_THRESHOLD
 
     finally:
-        log_end(success=success, steps=steps_taken, rewards=rewards)
+        log_end(success=success, steps=steps_taken, rewards=rewards, score=score)
 
     return EpisodeResult(
         task_id=task_id,
@@ -318,13 +318,16 @@ async def main() -> None:
         except Exception:
             pass
 
-        await run_episode(
-            env_client=env_client,
-            llm_client=llm_client,
-            task_id=TASK_NAME,
-            difficulty=DIFFICULTY,
-            seed=SEED,
-        )
+        tasks_to_run = [TASK_NAME] if os.getenv("TASK_NAME") else ["task_1", "task_2", "task_3"]
+        
+        for t_id in tasks_to_run:
+            await run_episode(
+                env_client=env_client,
+                llm_client=llm_client,
+                task_id=t_id,
+                difficulty=DIFFICULTY,
+                seed=SEED,
+            )
     finally:
         env_client.close()
 
