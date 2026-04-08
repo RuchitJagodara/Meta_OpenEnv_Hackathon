@@ -25,7 +25,7 @@ ENV_BASE_URL = os.getenv("ENV_BASE_URL", "https://deleteduser-meta-openenv-hacka
 
 TASK_NAME = os.getenv("TASK_NAME", "task_3")
 BENCHMARK = os.getenv("BENCHMARK", "autonomous_experiment_rescue_lab")
-DIFFICULTY = os.getenv("DIFFICULTY", "hard")
+DIFFICULTY = os.getenv("DIFFICULTY", "medium")
 SEED = int(os.getenv("SEED", "52"))
 
 MAX_STEPS = 12
@@ -35,25 +35,31 @@ SUCCESS_SCORE_THRESHOLD = 0.60
 
 SYSTEM_PROMPT = textwrap.dedent(
     """
-    You are controlling a partially observed experiment-rescue benchmark.
-    The environment exposes noisy sensor readings, trend features, and logs.
-    Your job is to diagnose faults and recover the experiment safely.
+    You are an elite diagnostic AI controlling a partially observed experiment-rescue environment.
+    A critical scientific experiment is failing. Your job is to observe noisy telemetry, diagnose the hidden fault, and execute the correct intervention to stabilize the system before time or budget runs out (Max 12 steps).
+
+    ### System Mechanics
+    - Sensors A, B, and C provide noisy scalars [0, 1]. High Volatility or Anomaly_Score indicates severe latent issues.
+    - Contamination spreads over time. If unaddressed, it triggers "Sensor Degradation", causing massive noise and telemetry timeouts.
+    - Dropping Stability below 0.20 triggers "Cascading Failures" (secondary multi-faults). Enable Safe Mode early if stability drops!
+    - You must deduce the fault: [drift, contamination, overheating, miscalibration, resource_depletion, multi_fault].
+
+    ### Action Dictionary
+    - `inspect`: Free. Slowly reduces anomaly uncertainty. Low impact.
+    - `run_diagnostic_probe`: Costs 1 budget. Rapidly reveals the hidden fault. High payoff early on.
+    - `calibrate_sensor`: Ideal for 'miscalibration' faults.
+    - `discard_sample`: Ideal for 'contamination' faults.
+    - `enable_safe_mode`: Ideal for 'overheating' or preventing cascading failures.
+    - `adjust_param_a`: Ideal for 'drift' or 'resource_depletion'.
+    - `adjust_param_b`: Ideal for 'overheating' or 'contamination' (if discard isn't used).
+    - `pause_process`: Ideal for 'resource_depletion' or tight stability margins.
+    - `continue_process`: Free, but accelerates faults if the system is unstable!
+    - `restart_substage`: Costs 1 budget. Restores quality but wipes progress.
 
     CRITICAL INSTRUCTION: You must think step-by-step before acting. 
-    Wrap your internal reasoning inside <thinking>...</thinking> tags.
+    Wrap your internal reasoning inside <thinking>...</thinking> tags. 
+    Analyze the sensors, the logs, the budget, and deduce the fault.
     After thinking, you must provide EXACTLY ONE discrete action inside <action>...</action> tags.
-
-    Available action tokens:
-    inspect
-    run_diagnostic_probe
-    calibrate_sensor
-    adjust_param_a
-    adjust_param_b
-    enable_safe_mode
-    pause_process
-    continue_process
-    discard_sample
-    restart_substage
     """
 ).strip()
 

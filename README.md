@@ -149,17 +149,26 @@ The agent receives a structured observation at each step:
 class Observation(BaseModel):
     task_id: str               # which task is running
     stage: Stage               # initialization → monitoring → degraded → recovery → terminal
-    sensor_a: float            # primary quality proxy (0.0–1.0)
-    sensor_b: float            # stability proxy (0.0–1.0)
-    sensor_c: float            # contamination inverse proxy (0.0–1.0)
-    rolling_mean: float        # mean of all sensors
-    rolling_slope: float       # process trend (rising = degrading)
-    volatility: float          # inter-sensor variance
-    anomaly_score: float       # derived fault severity signal (0.0–1.0)
-    diagnosis_uncertainty: float  # how confident the system is (lower = more certain)
-    log_events: List[str]      # discrete events: anomaly_detected, needs_more_diagnostics, etc.
-    steps_remaining: int       # episode time left
-    budget_remaining: int      # interventions left
+    
+    # --- RAW TELEMETRY SIGNALS ---
+    sensor_a: float            # Noisy proxy for underlying Latent Quality (0.0–1.0)
+    sensor_b: float            # Noisy proxy for Stability Margin (0.0–1.0)
+    sensor_c: float            # Noisy inverse proxy for Contamination Spread (0.0–1.0)
+    
+    # --- DERIVED TRENDS ---
+    rolling_mean: float        # 3-step trailing average of sensor aggregation
+    rolling_slope: float       # First derivative (velocity) of recent deviations. Rising means active degradation.
+    volatility: float          # Empirical variance calculation tracking system turbulence
+    anomaly_score: float       # Artificial heuristic indicating the system suspects a latent fault (0.0–1.0)
+    diagnosis_uncertainty: float  # Confidence entropy of the anomaly score (lower = more confident)
+    
+    # --- AUXILIARY ALERTS ---
+    log_events: List[str]      # Unstructured discrete warnings (e.g. 'anomaly_detected', 'possible_contamination')
+    sensors_degraded: bool     # True if high contamination caused cascading failure in telemetry sensors
+    
+    # --- CONSTRAINTS ---
+    steps_remaining: int       # Hard truncation limit (usually 12)
+    budget_remaining: int      # Operational interventions left
     available_actions: List[ActionType]
     previous_action: Optional[ActionType]
     last_reward: float
@@ -473,6 +482,13 @@ Most OpenEnv benchmarks model **task completion** — finish a coding problem, w
 4. **Monotonic degradation** — the environment drifts toward failure on its own; inaction is costly
 5. **Multi-fault mode** — hard difficulty can inject secondary faults, requiring agents that don't fixate on a single diagnosis
 6. **5 experiment domains** — chemistry, materials, calibration, manufacturing, robotics all use the same interface, testing generalization
+
+### Advanced Engine Mechanics
+To truly challenge frontier models, we implemented complex system interactions:
+- **Cascading Failures:** If `stability` drops below `0.20` and `safe_mode` isn't enabled, the simulator silently spawns a secondary destructive fault ("MULTI_FAULT"), compounding parameters exponentially.
+- **Sensor Degradation:** If `contamination` exceeds `0.60`, the sensors degrade permanently. White noise across all telemetry expands by `3.5x`, and log events occasionally drop as `"telemetry_timeout"`.
+- **Non-Linear Penalties:** Allowing a fault to exceed severe bounds generates scaling geometric penalties (`1.5x` and `2x` exponents) to immediately punish neglectful agents.
+- **Discovery Bonus:** Actively using a `diagnostic_probe` early enough to cleanly classify a fault grants a massive reward multiplier (`+0.35` multiplier) to encourage information-seeking over blind action.
 
 ---
 
