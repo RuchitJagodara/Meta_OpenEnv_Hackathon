@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Optional
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Body
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, Field
 
@@ -68,8 +68,9 @@ def metadata() -> dict:
 
 
 @app.post("/reset", response_model=ResetResponse)
-def reset_environment(request: ResetRequest) -> ResetResponse:
+def reset_environment(request: Optional[ResetRequest] = Body(default=None)) -> ResetResponse:
     try:
+        request = request or ResetRequest()
         if request.task_id is not None:
             ENV.task_id = request.task_id
         if request.difficulty is not None:
