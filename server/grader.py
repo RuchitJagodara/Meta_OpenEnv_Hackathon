@@ -25,12 +25,12 @@ class GraderContext:
 
 
 def _clamp01(value: float) -> float:
-    return max(0.0, min(1.0, float(value)))
+    return max(0.001, min(0.999, float(value)))
 
 
 def _normalize(value: float, lo: float, hi: float) -> float:
     if hi <= lo:
-        return 0.0
+        return 0.001
     return _clamp01((value - lo) / (hi - lo))
 
 
@@ -80,7 +80,7 @@ def _recovery_score_from_final_state(ctx: GraderContext) -> float:
     """
     h = ctx.final_hidden_state
     if h.terminal_status == TerminalStatus.FAILED:
-        return 0.0
+        return 0.001
 
     quality_term = _normalize(h.latent_quality, 0.35, 0.95)
     stability_term = _normalize(h.stability_margin, 0.20, 0.90)
@@ -156,7 +156,7 @@ def _final_quality_score(ctx: GraderContext) -> float:
     h = ctx.final_hidden_state
 
     if h.terminal_status == TerminalStatus.FAILED:
-        return 0.0
+        return 0.001
 
     quality = _normalize(h.latent_quality, 0.30, 0.95)
     stability = _normalize(h.stability_margin, 0.25, 0.95)
