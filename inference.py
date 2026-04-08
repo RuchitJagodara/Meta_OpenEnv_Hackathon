@@ -6,11 +6,7 @@ import textwrap
 from dataclasses import dataclass
 from typing import List, Optional
 
-try:
-    from openai import OpenAI
-except ImportError:
-    from typing import Any
-    OpenAI = Any  # type: ignore
+from openai import OpenAI
 from client import ExperimentRescueClient
 from models import Action, ActionType, Observation, TerminalStatus
 
@@ -304,11 +300,7 @@ async def main() -> None:
             hf_token = ""
         else:
             hf_token = HF_TOKEN.strip()
-        try:
-            from openai import OpenAI
-            llm_client = OpenAI(base_url=API_BASE_URL, api_key=hf_token)
-        except ImportError:
-            print("Error: openai package not found. Cannot use LLM policy.", flush=True)
+        llm_client = OpenAI(base_url=API_BASE_URL, api_key=hf_token)
 
     env_client = ExperimentRescueClient(base_url=ENV_BASE_URL)
 
