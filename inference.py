@@ -17,8 +17,8 @@ from models import Action, ActionType, Observation, TerminalStatus
 API_BASE_URL = os.getenv("API_BASE_URL", "https://api.openai.com/v1")
 MODEL_NAME = os.getenv("MODEL_NAME", "gpt-4.1-mini")
 
-API_KEY_RAW = os.getenv("API_KEY")
-API_KEY = API_KEY_RAW.strip() if API_KEY_RAW is not None else None
+HF_TOKEN_RAW = os.getenv("HF_TOKEN")
+HF_TOKEN = HF_TOKEN_RAW.strip() if HF_TOKEN_RAW is not None else None
 
 # Environment server URL for the OpenEnv HTTP endpoint.
 ENV_BASE_URL = os.getenv("ENV_BASE_URL", "https://deleteduser-meta-openenv-hackathon.hf.space")
@@ -29,7 +29,7 @@ DIFFICULTY = os.getenv("DIFFICULTY", "hard")
 SEED = int(os.getenv("SEED", "52"))
 
 MAX_STEPS = 12
-USE_LLM_POLICY = os.getenv("USE_LLM_POLICY", "1" if API_KEY else "0") == "1"
+USE_LLM_POLICY = os.getenv("USE_LLM_POLICY", "1" if HF_TOKEN else "0") == "1"
 SUCCESS_SCORE_THRESHOLD = 0.60
 
 
@@ -295,11 +295,11 @@ async def run_episode(
 async def main() -> None:
     llm_client = None
     if USE_LLM_POLICY:
-        if API_KEY is None or not API_KEY.strip():
-            print("Warning: API_KEY is missing but USE_LLM_POLICY=1. Attempting without token.", flush=True)
+        if HF_TOKEN is None or not HF_TOKEN.strip():
+            print("Warning: HF_TOKEN is missing but USE_LLM_POLICY=1. Attempting without token.", flush=True)
             api_key = ""
         else:
-            api_key = API_KEY.strip()
+            api_key = HF_TOKEN.strip()
         llm_client = OpenAI(base_url=API_BASE_URL, api_key=api_key)
 
     env_client = ExperimentRescueClient(base_url=ENV_BASE_URL)

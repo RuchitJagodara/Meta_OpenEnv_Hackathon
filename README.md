@@ -350,7 +350,7 @@ python demo.py
 ### Run the baseline inference script
 
 ```bash
-export API_KEY="your_api_key"
+export HF_TOKEN="your_hf_token"
 export ENV_BASE_URL="http://localhost:7860"
 export MODEL_NAME="gpt-4.1-mini"    # or any OpenAI-compatible model
 
@@ -483,7 +483,7 @@ Most OpenEnv benchmarks model **task completion** — finish a coding problem, w
 | `ENV_BASE_URL` | `https://...hf.space` | The environment server URL |
 | `API_BASE_URL` | `https://api.openai.com/v1` | LLM API endpoint |
 | `MODEL_NAME` | `gpt-4.1-mini` | Model to use for LLM policy |
-| `API_KEY` | *(required)* | API key for LLM API authentication |
+| `HF_TOKEN` | *(required)* | HuggingFace token for LLM API authentication |
 | `TASK_NAME` | `task_3` | Which task to run |
 | `DIFFICULTY` | `hard` | Episode difficulty level |
 | `SEED` | `52` | Episode seed |
