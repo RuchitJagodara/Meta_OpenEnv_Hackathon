@@ -6,8 +6,11 @@ import textwrap
 from dataclasses import dataclass
 from typing import List, Optional
 
-from openai import OpenAI
-
+try:
+    from openai import OpenAI
+except ImportError:
+    from typing import Any
+    OpenAI = Any  # type: ignore
 from client import ExperimentRescueClient
 from models import Action, ActionType, Observation, TerminalStatus
 
@@ -294,11 +297,19 @@ async def run_episode(
 
 
 async def main() -> None:
-    if HF_TOKEN is None or not HF_TOKEN.strip():
-        raise RuntimeError("HF_TOKEN is required and must be set in the environment.")
+    llm_client = None
+    if USE_LLM_POLICY:
+        if HF_TOKEN is None or not HF_TOKEN.strip():
+            print("Warning: HF_TOKEN is missing but USE_LLM_POLICY=1. Attempting without token.", flush=True)
+            hf_token = ""
+        else:
+            hf_token = HF_TOKEN.strip()
+        try:
+            from openai import OpenAI
+            llm_client = OpenAI(base_url=API_BASE_URL, api_key=hf_token)
+        except ImportError:
+            print("Error: openai package not found. Cannot use LLM policy.", flush=True)
 
-    hf_token = HF_TOKEN.strip()
-    llm_client = OpenAI(base_url=API_BASE_URL, api_key=hf_token)
     env_client = ExperimentRescueClient(base_url=ENV_BASE_URL)
 
     try:
