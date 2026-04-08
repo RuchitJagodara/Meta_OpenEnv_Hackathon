@@ -15,7 +15,7 @@ from models import Action, ActionType, Observation, TerminalStatus
 # Required configuration
 # -----------------------------------------------------------------------------
 API_BASE_URL = os.getenv("API_BASE_URL", "https://api.openai.com/v1")
-MODEL_NAME = os.getenv("MODEL_NAME", "gpt-4.1-mini")
+MODEL_NAME = os.getenv("MODEL_NAME", "gpt-4.1")
 
 HF_TOKEN_RAW = os.getenv("HF_TOKEN")
 HF_TOKEN = HF_TOKEN_RAW.strip() if HF_TOKEN_RAW is not None else None

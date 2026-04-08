@@ -53,33 +53,33 @@ TASK_LIBRARY: Dict[str, Dict[str, object]] = {
 DIFFICULTY_SETTINGS: Dict[str, Dict[str, object]] = {
     "easy": {
         "max_steps": 12,
-        "budget": 6,
-        "noise_scale": (0.03, 0.10),
-        "fault_severity": (0.25, 0.45),
-        "latent_quality": (0.70, 0.90),
-        "contamination_level": (0.00, 0.20),
-        "stability_margin": (0.65, 0.90),
+        "budget": 8,
+        "noise_scale": (0.01, 0.05),
+        "fault_severity": (0.10, 0.25),
+        "latent_quality": (0.85, 0.98),
+        "contamination_level": (0.00, 0.10),
+        "stability_margin": (0.75, 0.95),
         "multi_fault_prob": 0.00,
     },
     "medium": {
         "max_steps": 12,
         "budget": 6,
-        "noise_scale": (0.08, 0.18),
-        "fault_severity": (0.35, 0.65),
-        "latent_quality": (0.55, 0.82),
+        "noise_scale": (0.05, 0.15),
+        "fault_severity": (0.35, 0.60),
+        "latent_quality": (0.55, 0.80),
         "contamination_level": (0.05, 0.35),
         "stability_margin": (0.40, 0.70),
         "multi_fault_prob": 0.10,
     },
     "hard": {
         "max_steps": 12,
-        "budget": 5,
-        "noise_scale": (0.12, 0.28),
-        "fault_severity": (0.55, 0.90),
-        "latent_quality": (0.35, 0.72),
-        "contamination_level": (0.10, 0.55),
-        "stability_margin": (0.15, 0.55),
-        "multi_fault_prob": 0.35,
+        "budget": 4,
+        "noise_scale": (0.15, 0.40),
+        "fault_severity": (0.70, 0.95),
+        "latent_quality": (0.15, 0.45),
+        "contamination_level": (0.30, 0.70),
+        "stability_margin": (0.05, 0.35),
+        "multi_fault_prob": 0.50,
     },
 }
 
@@ -177,7 +177,9 @@ def build_scenario_spec(seed: int, task_id: str, difficulty: str) -> ScenarioSpe
     if difficulty not in DIFFICULTY_SETTINGS:
         raise ValueError(f"Unknown difficulty: {difficulty}")
 
-    rng = random.Random(seed)
+    # Seed incorporates task_id and difficulty so each combination generates a totally unique initial state
+    hashed_seed = int(hashlib.sha256(f"{seed}:{task_id}:{difficulty}".encode()).hexdigest()[:8], 16)
+    rng = random.Random(hashed_seed)
     task_info = TASK_LIBRARY[task_id]
     difficulty_info = DIFFICULTY_SETTINGS[difficulty]
 
@@ -207,7 +209,8 @@ def build_scenario_spec(seed: int, task_id: str, difficulty: str) -> ScenarioSpe
 
 
 def build_hidden_state(seed: int, spec: ScenarioSpec) -> HiddenState:
-    rng = random.Random(seed + 9173)
+    hashed_seed = int(hashlib.sha256(f"{seed}:{spec.task_id}:{spec.difficulty}".encode()).hexdigest()[:8], 16)
+    rng = random.Random(hashed_seed + 9173)
 
     fault_severity_bounds = DIFFICULTY_SETTINGS[spec.difficulty]["fault_severity"]  # type: ignore[index]
     latent_quality_bounds = DIFFICULTY_SETTINGS[spec.difficulty]["latent_quality"]  # type: ignore[index]
